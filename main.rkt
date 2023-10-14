@@ -11,14 +11,15 @@
 
 
 (define (handle-key key)
-  (when (char=? #\w key)
-    (set! direction '(0 -1)))
-  (when (char=? #\a key)
-    (set! direction (list -1 0)))
-  (when (char=? #\s key)
-    (set! direction '(0 1)))
-  (when (char=? #\d key)
-    (set! direction '(1 0))))
+  (when (char? key)
+      (when (char=? #\w key)
+        (set! direction '(0 -1)))
+      (when (char=? #\a key)
+        (set! direction (list -1 0)))
+      (when (char=? #\s key)
+        (set! direction '(0 1)))
+      (when (char=? #\d key)
+        (set! direction '(1 0)))))
 
 (define game-canvas%
   (class canvas% ; The base class is canvas%
