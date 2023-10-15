@@ -1,6 +1,4 @@
 #lang racket
-(require "util.rkt")
-
 (provide snake-init snake-iter get-x get-y)
 
 (define (snake-init) (list (list 0 2) (list 0 1) (list 0 0)))
@@ -18,8 +16,7 @@
                      (>= new-x 0)
                      (>= new-y 0))])
 
-    (if (not inside?)
-      (error "Game over")
+    (when inside?
       (let* ([head (list new-x new-y)]
-             [tail (sliding-window snake #:func (lambda (window) (car window)))])
+             [tail (take snake (- (length snake) 1))])
         (append (list head) tail)))))

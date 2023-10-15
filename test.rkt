@@ -1,15 +1,42 @@
 #lang racket
 (module test racket
-    (require "util.rkt")
 
-    (define-syntax-rule (testing expected expr)
-      (let ([actual expr])
-          (displayln (list "Testing:" (quote (equal? expected expr))))
-          (if (equal? expected actual)
-              (displayln "Passed")
-              (error "Test failed:" "actual was " actual ". expected:" expected))))
+  (define (nequal? e a)
+    (not (equal? e a)))
 
-    (testing (list (list 1 2)) (sliding-window '(1 2)))
-    (testing (list (list 1 2) (list 2 3)) (sliding-window '(1 2 3)))
-    (testing '(1) (sliding-window '(1 2) #:func (lambda (w) (car w))))
-    (testing '(1 2 3) (sliding-window '(1 2 3 4) #:func (lambda (w) (car w)))))
+  (define (run-test expected expr comp-op)
+    (let ([actual expr])
+      (displayln (list "Testing:" (quasiquote ((unquote comp-op) expected expr))))
+      (if (comp-op expected actual)
+          (displayln "Passed")
+          (error "Test failed:" "actual was " actual ". expected:" expected))))
+
+  (define-syntax-rule (testing-eq expected expr)
+    (run-test expected expr equal?))
+
+  (define-syntax-rule (testing-neq expected expr)
+    (run-test expected expr nequal?))
+
+  (define-syntax-rule (testing-expr expr)
+    (let ([actual expr])
+      (displayln (list "Testing:" (quote expr)))
+      (if actual
+          (displayln "Passed")
+          (error "Test failed:" (syntax->datum expr)))))
+
+  (testing-eq '(1 2 3) ((lambda (lst)
+                          (take lst (- (length lst) 1)))
+                        '(1 2 3 4)))
+
+  ;; testing if we can use sum types
+  (require "maybe.rkt")
+  (testing-expr (maybe? (Maybe 123)))
+  (testing-expr (none? none))
+  (testing-neq none (Maybe 123))
+  (testing-eq 123 (match (Maybe 123)
+                    [(Maybe v) v]
+                    ['none 321]))
+  (testing-eq none (match none
+                     [(Maybe v) v]
+                     [n n])))
+
