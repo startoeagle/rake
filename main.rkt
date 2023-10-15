@@ -3,6 +3,8 @@
 (require "game.rkt")
 
 (define snake (snake-init))
+(define snake-color "green")
+(define grid (list 20 20))
 
 (define (direction-init) (list 1 0))
 
@@ -13,8 +15,13 @@
 
 (define direction (direction-init))
 
-(define grid (list 20 20))
-(define snake-color "green")
+(define (food-create grid)
+  (let ([new-point (list (random 0 (get-x grid)) (random 0 (get-y grid)))])
+    new-point))
+
+(define food (food-create grid))
+(define food-color "red")
+
 
 (define (handle-key key)
   (when (char? key)
@@ -41,9 +48,19 @@
                    [height 640]))
 (define canvas (new game-canvas%
                     [parent frame]
-                    [paint-callback (lambda (canvas dc) (draw-snake dc))]))
+                    [paint-callback (lambda (canvas dc)
+                                      (draw-snake dc)
+                                      (draw-food dc))]))
 
 (define square-size (/ 640 (get-x grid)))
+
+(define (draw-food dc)
+  (send dc set-brush food-color 'solid)
+  (send dc draw-rectangle
+        (* square-size (get-x food))
+        (* square-size (get-y food))
+        square-size
+        square-size))
 
 (define (draw-snake dc)
   (send dc set-brush snake-color 'solid)
@@ -53,30 +70,30 @@
           (* square-size (get-y s))
           square-size square-size)))
 
-(send frame show #t)
 
 (require "maybe.rkt")
 
 (define (update-snake)
   (let ([new-snake (snake-iter snake direction grid)])
     (if (equal? new-snake snake)
-        none
+        'none
         (Maybe new-snake))))
-
 
 (define (main-loop)
   (match (update-snake)
-    ['none (eval (lambda ()
-                   (send frame create-status-line)
-                   (send frame set-status-text "TODO; Game over")))]
+    ['none (set! snake (snake-init))]
     [(Maybe new-snake)
      (set! snake new-snake)
+     (when (equal? food (snake-head new-snake))
+       (set! food (food-create grid))
+       (set! snake (snake-grow new-snake)))
      (send canvas refresh)]))
 
 (define my-timer (new timer%
                       [notify-callback (lambda ()
                                          (main-loop))]
-                      [interval 500]))
+                      [interval 100]))
 
+(send frame show #t)
 (module+ main
   (send my-timer start))
